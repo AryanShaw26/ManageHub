@@ -4,6 +4,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(5000),
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
+  DIRECT_URL: z.string().min(1, 'DIRECT_URL is required'),
   JWT_SECRET: z.string().min(64, 'JWT_SECRET must be at least 64 characters long'),
   CLIENT_ORIGIN: z.string().min(1, 'CLIENT_ORIGIN is required'),
   COOKIE_NAME: z.string().default('managehub_token'),
