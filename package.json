@@ -1,0 +1,31 @@
+{
+  "name": "managehub",
+  "version": "1.0.0",
+  "description": "ManageHub - Institutional Student Records and Academic Management System",
+  "private": true,
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "dev": "npm --prefix server run dev",
+    "build:client": "npm --prefix client run build",
+    "build:server": "npm --prefix server run prisma:generate",
+    "build": "npm run build:server && npm run build:client",
+    "start": "npm --prefix server start",
+    "prisma:generate": "npm --prefix server run prisma:generate",
+    "prisma:migrate": "npm --prefix server run prisma:migrate",
+    "prisma:seed": "npm --prefix server run prisma:seed",
+    "test": "npm --prefix server test"
+  },
+  "keywords": [
+    "managehub",
+    "education",
+    "student-management",
+    "multi-tenant"
+  ],
+  "author": "",
+  "license": "ISC"
+}

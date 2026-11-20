@@ -1,0 +1,202 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MembershipRole {
+  ADMIN
+  FACULTY
+}
+
+enum ResultStatus {
+  PASS
+  FAIL
+  ABSENT
+}
+
+model Institution {
+  id              String   @id @default(uuid()) @db.Uuid
+  name            String   @db.VarChar(180)
+  institutionCode String   @unique @db.VarChar(40)
+  email           String   @db.VarChar(255)
+  phone           String?  @db.VarChar(30)
+  address         String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  members  InstitutionMember[]
+  programs Program[]
+  classes  AcademicClass[]
+  students Student[]
+
+  @@map("institutions")
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String   @db.VarChar(150)
+  email        String   @unique @db.VarChar(255)
+  passwordHash String   @db.Text
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  memberships       InstitutionMember[]
+  facultyClasses    ClassFaculty[]
+  updatedMarks      StudentMark[]       @relation("UpdatedBy")
+
+  @@map("users")
+}
+
+model InstitutionMember {
+  id            String         @id @default(uuid()) @db.Uuid
+  institutionId String         @db.Uuid
+  userId        String         @db.Uuid
+  role          MembershipRole @default(FACULTY)
+  createdAt     DateTime       @default(now())
+
+  institution Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([institutionId, userId])
+  @@index([institutionId])
+  @@index([userId])
+  @@map("institution_members")
+}
+
+model Program {
+  id            String    @id @default(uuid()) @db.Uuid
+  institutionId String    @db.Uuid
+  name          String    @db.VarChar(150)
+  department    String?   @db.VarChar(150)
+  durationYears Int       @default(4)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  archivedAt    DateTime?
+
+  institution Institution     @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  semesters   Semester[]
+  classes     AcademicClass[]
+
+  @@index([institutionId])
+  @@map("programs")
+}
+
+model AcademicClass {
+  id            String    @id @default(uuid()) @db.Uuid
+  institutionId String    @db.Uuid
+  programId     String    @db.Uuid
+  name          String    @db.VarChar(150)
+  batchYear     Int
+  section       String?   @db.VarChar(30)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  archivedAt    DateTime?
+
+  institution Institution    @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  program     Program        @relation(fields: [programId], references: [id], onDelete: Cascade)
+  students    Student[]
+  faculty     ClassFaculty[]
+
+  @@index([institutionId])
+  @@index([programId])
+  @@map("academic_classes")
+}
+
+model ClassFaculty {
+  id        String   @id @default(uuid()) @db.Uuid
+  classId   String   @db.Uuid
+  userId    String   @db.Uuid
+  createdAt DateTime @default(now())
+
+  class AcademicClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, userId])
+  @@index([classId])
+  @@index([userId])
+  @@map("class_faculty")
+}
+
+model Student {
+  id               String    @id @default(uuid()) @db.Uuid
+  institutionId    String    @db.Uuid
+  classId          String    @db.Uuid
+  studentName      String    @db.VarChar(150)
+  enrollmentNumber String    @db.VarChar(80)
+  rollNumber       String    @db.VarChar(40)
+  email            String?   @db.VarChar(255)
+  phone            String?   @db.VarChar(30)
+  dateOfBirth      DateTime?
+  admissionYear    Int
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  archivedAt       DateTime?
+
+  institution Institution   @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  class       AcademicClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+  marks       StudentMark[]
+
+  @@unique([institutionId, enrollmentNumber])
+  @@unique([classId, rollNumber])
+  @@index([institutionId, classId])
+  @@map("students")
+}
+
+model Semester {
+  id             String   @id @default(uuid()) @db.Uuid
+  programId      String   @db.Uuid
+  semesterNumber Int
+  name           String   @db.VarChar(50)
+  createdAt      DateTime @default(now())
+
+  program  Program   @relation(fields: [programId], references: [id], onDelete: Cascade)
+  subjects Subject[]
+
+  @@unique([programId, semesterNumber])
+  @@index([programId])
+  @@map("semesters")
+}
+
+model Subject {
+  id          String   @id @default(uuid()) @db.Uuid
+  semesterId  String   @db.Uuid
+  subjectCode String   @db.VarChar(50)
+  subjectName String   @db.VarChar(180)
+  maxMarks    Decimal  @db.Decimal(7, 2)
+  credits     Decimal? @db.Decimal(5, 2)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  semester Semester      @relation(fields: [semesterId], references: [id], onDelete: Cascade)
+  marks    StudentMark[]
+
+  @@unique([semesterId, subjectCode])
+  @@index([semesterId])
+  @@map("subjects")
+}
+
+model StudentMark {
+  id              String        @id @default(uuid()) @db.Uuid
+  studentId       String        @db.Uuid
+  subjectId       String        @db.Uuid
+  marksObtained   Decimal       @db.Decimal(7, 2)
+  grade           String?       @db.VarChar(10)
+  resultStatus    ResultStatus?
+  updatedByUserId String?       @db.Uuid
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subject   Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  updatedBy User?    @relation("UpdatedBy", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([studentId, subjectId])
+  @@index([studentId])
+  @@index([subjectId])
+  @@map("student_marks")
+}

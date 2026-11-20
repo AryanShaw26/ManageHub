@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-canvas text-ink-900 font-sans antialiased min-h-screen;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  ::selection {
+    @apply bg-brand-200 text-ink-900;
+  }
+}
+
+@layer utilities {
+  .bento-card {
+    @apply bg-surface border border-border rounded-bento shadow-warm p-6 transition-all duration-200;
+  }
+  .bento-card-hover {
+    @apply hover:border-brand-300 hover:shadow-warm-lg;
+  }
+}
